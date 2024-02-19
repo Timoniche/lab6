@@ -19,7 +19,7 @@ public class IslandsAlg {
         int dimension = 50; // dimension of problem
         int complexity = 1; // fitness estimation time multiplicator
         int populationSize = 50; // size of population
-        int generations = 10; // number of generations
+        int generations = 100; // number of generations
 
         Random random = new Random(); // random
 
@@ -55,6 +55,7 @@ public class IslandsAlg {
         });
 
         TerminationCondition terminate = new GenerationCount(generations);
-        island_model.evolve(populationSize, 1, 50, 2, terminate);
+        int islandPopulationSize = populationSize / islandCount;
+        island_model.evolve(islandPopulationSize, 1, 50, 2, terminate);
     }
 }

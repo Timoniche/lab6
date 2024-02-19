@@ -6,44 +6,84 @@ import org.uncommons.watchmaker.framework.selection.RouletteWheelSelection;
 import org.uncommons.watchmaker.framework.termination.GenerationCount;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 public class MasterSlaveAlg {
 
-    public static void main(String[] args) {
-        int dimension = 10; // dimension of problem
-        int complexity = 1; // fitness estimation time multiplicator
-        int populationSize = 50; // size of population
-        int generations = 100; // number of generations
+    private static class BestFitness {
+        private double bestRun = 0.0;
 
-        Random random = new Random(); // random
+        private void update(double fitness) {
+            if (fitness > bestRun) {
+                bestRun = fitness;
+            }
+        }
 
-        CandidateFactory<double[]> factory = new MyFactory(dimension); // generation of solutions
+        public double getBestRun() {
+            return bestRun;
+        }
+    }
 
-        ArrayList<EvolutionaryOperator<double[]>> operators = new ArrayList<EvolutionaryOperator<double[]>>();
-        operators.add(new MyCrossover()); // Crossover
-        operators.add(new MyMutation()); // Mutation
-        EvolutionPipeline<double[]> pipeline = new EvolutionPipeline<double[]>(operators);
+    public static void run(
+            boolean singleThreaded,
+            int complexity
+    ) {
+        int dimension = 50;
+        int populationSize = 100;
+        int generations = 100;
 
-        SelectionStrategy<Object> selection = new RouletteWheelSelection(); // Selection operator
+        Random random = new Random();
 
-        FitnessEvaluator<double[]> evaluator = new MultiFitnessFunction(dimension, complexity); // Fitness function
+        CandidateFactory<double[]> factory = new MyFactory(dimension);
 
-        AbstractEvolutionEngine<double[]> algorithm = new SteadyStateEvolutionEngine<double[]>(
+        ArrayList<EvolutionaryOperator<double[]>> operators = new ArrayList<>();
+        operators.add(new MyCrossover());
+        operators.add(new MyMutation());
+        EvolutionPipeline<double[]> pipeline = new EvolutionPipeline<>(operators);
+
+        SelectionStrategy<Object> selection = new RouletteWheelSelection();
+
+        FitnessEvaluator<double[]> evaluator = new MultiFitnessFunction(dimension, complexity);
+
+        AbstractEvolutionEngine<double[]> algorithm = new SteadyStateEvolutionEngine<>(
                 factory, pipeline, evaluator, selection, populationSize, false, random);
 
-        algorithm.setSingleThreaded(true);
+        algorithm.setSingleThreaded(singleThreaded);
 
+        BestFitness bestFitness = new BestFitness();
         algorithm.addEvolutionObserver(new EvolutionObserver() {
             public void populationUpdate(PopulationData populationData) {
                 double bestFit = populationData.getBestCandidateFitness();
-                System.out.println("Generation " + populationData.getGenerationNumber() + ": " + bestFit);
-                System.out.println("\tBest solution = " + Arrays.toString((double[])populationData.getBestCandidate()));
+                bestFitness.update(bestFit);
+//                System.out.println("Generation " + populationData.getGenerationNumber() + ": " + bestFit);
+//                System.out.println("\tBest solution = " + Arrays.toString((double[])populationData.getBestCandidate()));
             }
         });
 
         TerminationCondition terminate = new GenerationCount(generations);
+
+        long startTime = System.currentTimeMillis();
         algorithm.evolve(populationSize, 1, terminate);
+        long endTime = System.currentTimeMillis();
+        long durationMs = (endTime - startTime);
+
+        String algo = singleThreaded ? "Single-thread" : "Master-slave";
+        double bestFitVal = bestFitness.getBestRun();
+        String bestFit = String.format("%.2f", bestFitVal);
+        System.out.println(algo + " | " + complexity + " | " + bestFit + " | " + durationMs);
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Algo | Complexity | Fitness | Time");
+        boolean singleThreaded = true;
+        System.out.println();
+        for (int complexity = 1; complexity <= 5; complexity++) {
+            run(singleThreaded, complexity);
+        }
+
+        singleThreaded = false;
+        for (int complexity = 1; complexity <= 5; complexity++) {
+            run(singleThreaded, complexity);
+        }
     }
 }
