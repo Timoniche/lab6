@@ -33,7 +33,7 @@ public class MasterSlaveAlg {
         AbstractEvolutionEngine<double[]> algorithm = new SteadyStateEvolutionEngine<double[]>(
                 factory, pipeline, evaluator, selection, populationSize, false, random);
 
-        algorithm.setSingleThreaded(false);
+        algorithm.setSingleThreaded(true);
 
         algorithm.addEvolutionObserver(new EvolutionObserver() {
             public void populationUpdate(PopulationData populationData) {
