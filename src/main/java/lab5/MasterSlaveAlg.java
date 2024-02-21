@@ -11,38 +11,6 @@ import java.util.Random;
 
 public class MasterSlaveAlg {
 
-    private static class BestFitness {
-        private double bestRun = 0.0;
-
-        private void update(double fitness) {
-            if (fitness > bestRun) {
-                bestRun = fitness;
-            }
-        }
-
-        public double getBestRun() {
-            return bestRun;
-        }
-    }
-
-    private static class RunResult {
-        private final double fit;
-        private final long timeMs;
-
-        public RunResult(double fit, long timeMs) {
-            this.fit = fit;
-            this.timeMs = timeMs;
-        }
-
-        public double getFit() {
-            return fit;
-        }
-
-        public long getTimeMs() {
-            return timeMs;
-        }
-    }
-
     public static RunResult run(
             boolean singleThreaded,
             int complexity
@@ -69,7 +37,12 @@ public class MasterSlaveAlg {
 
         algorithm.setSingleThreaded(singleThreaded);
 
-        BestFitness bestFitness = new BestFitness();
+        BestFitness bestFitness;
+        if (singleThreaded) {
+            bestFitness = new BestFitnessSingle();
+        } else {
+            bestFitness = new BestFitnessConcurrent();
+        }
         algorithm.addEvolutionObserver(new EvolutionObserver() {
             public void populationUpdate(PopulationData populationData) {
                 double bestFit = populationData.getBestCandidateFitness();
